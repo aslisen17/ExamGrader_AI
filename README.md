@@ -19,7 +19,8 @@
    git clone https://github.com/aslisen17/ExamGrader_AI.git
    cd ExamGrader_AI
 
-# 🤝 Contributing
+## Contributing
+
 Contributions are welcome! Open an issue or submit a pull request to improve the project.
 
-Made with ❤️ by Aslı Dilara Şen
+Made with ❤️ by Aslı Şen
