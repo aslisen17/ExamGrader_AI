@@ -24,7 +24,7 @@ OPENAI_API_TYPE = os.getenv("OPENAI_API_TYPE")
 FORM_RECOGNIZER_ENDPOINT = os.getenv("FORM_RECOGNIZER_ENDPOINT")
 FORM_RECOGNIZER_KEY = os.getenv("FORM_RECOGNIZER_KEY")
 
-# Optionally retrieve Azure Blob Storage creds
+# Retrieve Azure Blob Storage creds
 from azure.storage.blob import BlobServiceClient
 BLOB_CONNECTION_STRING = os.getenv("AZURE_BLOB_CONNECTION_STRING")
 BLOB_CONTAINER = os.getenv("AZURE_BLOB_CONTAINER")
@@ -281,7 +281,7 @@ def upload_files():
     stu_local_path = os.path.join(app.config['UPLOAD_FOLDER'], stu_filename)
     student_file.save(stu_local_path)
 
-    # Optional: Upload student file to Blob Storage
+    # Upload student file to Blob Storage
     if BLOB_CONNECTION_STRING and BLOB_CONTAINER:
         try:
             blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
@@ -349,8 +349,8 @@ def upload_files():
             "percent": round(pct, 2)
         })
 
-    # Store question-by-question details in the global dictionary
-    # so the /details/<student_file> route can display them
+   
+    
     student_details_cache = defaultdict(list)
     for row in results:
         filename = row["StudentFile"]
@@ -359,8 +359,8 @@ def upload_files():
     return render_template('index.html',
                            overall_scores=overall_scores,
                            error=None  # no error
-                           # We don't pass "results" to index directly anymore
-                           # because we're doing the 2-page approach
+                           
+                           
                           )
 
 @app.route('/details/<path:student_file>')
