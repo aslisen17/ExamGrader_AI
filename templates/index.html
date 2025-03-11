@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Exam Grader</title>
+
+  <!-- Bootstrap CSS -->
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    /* Sticky Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    /* Hero Section */
+    .hero-section {
+      background: url('https://images.unsplash.com/photo-1537432376769-00a67d6ccfd2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80')
+        center center / cover no-repeat;
+      color: #fff;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .hero-section .hero-overlay {
+      background-color: rgba(0, 0, 0, 0.4);
+      width: 100%;
+      height: 100%;
+      padding: 60px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    }
+    .hero-subtitle {
+      font-size: 20px;
+      font-weight: 300;
+      margin-top: 0;
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.4;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    /* Card styling */
+    .card {
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+      border-radius: 10px;
+      margin-bottom: 2rem;
+    }
+    /* Table customization */
+    table.table tr th,
+    table.table tr td {
+      padding: 0.75rem 1rem;
+    }
+    thead.table-light th {
+      background-color: #e9ecef !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">AI Exam Grader</a>
+      <button 
+        class="navbar-toggler" 
+        type="button" 
+        data-bs-toggle="collapse" 
+        data-bs-target="#navbarNav" 
+        aria-controls="navbarNav" 
+        aria-expanded="false" 
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <!-- 'Home' link -->
+            <a class="nav-link" href="/">Home</a>
+          </li>
+          <li class="nav-item">
+            <!-- 'Sample Exam' link -->
+            <a class="nav-link" href="/sample_exams" target="_blank">Sample Exam Format</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-overlay">
+      <h1 class="hero-title">Exam Grader AI Agent</h1>
+      <p class="hero-subtitle">
+        Automatically grade exams with a custom teacher-provided rubric.
+      </p>
+    </div>
+  </section>
+
+  <div class="container my-5">
+
+    <!-- Error Alert -->
+    {% if error %}
+      <div class="alert alert-danger text-center" role="alert">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <!-- Upload Form -->
+    <div class="card p-4 mb-5">
+      <h2 class="mb-4">Upload PDFs &amp; Set a Rubric</h2>
+      <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label for="reference" class="form-label fw-bold">Reference PDF</label>
+          <input 
+            type="file" 
+            class="form-control" 
+            id="reference" 
+            name="reference" 
+            accept=".pdf" 
+            required
+          >
+          <small class="text-muted">
+            PDF containing questions, points, and reference answers.
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label for="files" class="form-label fw-bold">Student Files (PDF or ZIP)</label>
+          <input 
+            type="file" 
+            class="form-control" 
+            id="files" 
+            name="files" 
+            accept=".pdf,.zip" 
+            multiple 
+            required
+          >
+          <small class="text-muted">
+            Upload one or more student PDFs, or a ZIP with multiple PDFs.
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label for="rubric" class="form-label fw-bold">Custom Rubric</label>
+          <textarea 
+            class="form-control" 
+            id="rubric" 
+            name="rubric" 
+            rows="4"
+            placeholder="E.g., Focus on correctness, clarity, and originality. Grammar errors reduce points..."
+          ></textarea>
+          <small class="text-muted">
+            Provide grading instructions for the AI. They will be passed to the model.
+          </small>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mb-3" id="progressContainer" style="display:none;">
+          <label class="fw-bold">Upload Progress</label>
+          <div class="progress">
+            <div 
+              id="progressBar" 
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar" 
+              aria-valuenow="0" 
+              aria-valuemin="0"
+              aria-valuemax="100" 
+              style="width:0%"
+            >
+              0%
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 mt-3">
+          Upload &amp; Grade
+        </button>
+      </form>
+    </div>
+
+    <!-- Build a dictionary of question details per student_file -->
+    {% set student_details = {} %}
+    {% for row in results or [] %}
+      {% if student_details[row.StudentFile] is not defined %}
+        {% set _dummy = student_details.__setitem__(row.StudentFile, []) %}
+      {% endif %}
+      {% set _dummy = student_details[row.StudentFile].append(row) %}
+    {% endfor %}
+
+    {% if overall_scores %}
+      <!-- Overall Exam Scores (Summary) -->
+      <div class="card p-4 mb-5">
+        <h2 class="mb-3">Overall Exam Scores</h2>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Student File</th>
+                <th>Score / Possible</th>
+                <th>Percent</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for score_item in overall_scores %}
+              <tr>
+                <td>{{ score_item.student_file }}</td>
+                <td>
+                  {{ score_item.score_obtained }} / {{ score_item.score_possible }}
+                </td>
+                <td>{{ score_item.percent }}%</td>
+                <td>
+                  <!-- INSTEAD OF triggering a modal, we link to a new route -->
+                  <a 
+                    class="btn btn-primary btn-sm"
+                    href="{{ url_for('details_page', student_file=score_item.student_file) }}"
+                  >
+                    View Details
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Optional Download Excel Link -->
+    {% if download_link %}
+      <div class="text-center mb-5">
+        <a href="{{ download_link }}" class="btn btn-lg btn-outline-success">
+          Download Results (Excel)
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Bootstrap Modal for Detailed Breakdown (Unused) -->
+  <div 
+    class="modal fade" 
+    id="detailModal" 
+    tabindex="-1" 
+    aria-labelledby="detailModalLabel" 
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detailModalLabel">Detailed Breakdown</h5>
+          <button 
+            type="button" 
+            class="btn-close" 
+            data-bs-dismiss="modal" 
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <!-- We'll populate this dynamically via JS if we ever re-enable the modal -->
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle" id="detailTable">
+              <thead class="table-light">
+                <tr>
+                  <th>Question #</th>
+                  <th>Question Text</th>
+                  <th>Score</th>
+                  <th>Feedback</th>
+                </tr>
+              </thead>
+              <tbody id="detailTableBody">
+                <!-- JavaScript populates these rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script 
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  ></script>
+
+  <!-- AJAX Submission + (Currently Unused) Modal Script -->
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+
+    uploadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      progressContainer.style.display = 'block';
+
+      const formData = new FormData(uploadForm);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', uploadForm.action, true);
+
+      xhr.upload.addEventListener('progress', function(event) {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          progressBar.style.width = percentComplete + '%';
+          progressBar.textContent = Math.round(percentComplete) + '%';
+        }
+      });
+
+      xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+          document.open();
+          document.write(xhr.responseText);
+          document.close();
+        } else {
+          alert('An error occurred: ' + xhr.status + ' ' + xhr.statusText);
+        }
+      });
+
+      xhr.send(formData);
+    });
+
+    // The code below is no longer triggered because we replaced the button with an <a> link
+    // But we leave it here to avoid removing any of your code or changing the layout.
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.classList.contains('view-details')) {
+        const questionsData = e.target.getAttribute('data-questions');
+        const studentFile = e.target.getAttribute('data-studentfile');
+        const detailModalLabel = document.getElementById('detailModalLabel');
+        const detailTableBody = document.getElementById('detailTableBody');
+
+        detailModalLabel.textContent = `Detailed Breakdown for ${studentFile}`;
+        detailTableBody.innerHTML = '';
+
+        let questions = [];
+        try {
+          questions = JSON.parse(questionsData);
+        } catch (err) {
+          console.error('Failed to parse questions JSON', err);
+        }
+
+        questions.forEach(q => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>Question ${q.QuestionNumber}</td>
+            <td>${q.QuestionText}</td>
+            <td>${q.Feedback.score}</td>
+            <td>${q.Feedback.overall}</td>
+          `;
+          detailTableBody.appendChild(tr);
+        });
+
+        const detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+        detailModal.show();
+      }
+    });
+  </script>
+</body>
+</html>

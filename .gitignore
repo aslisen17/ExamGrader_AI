@@ -1,0 +1,22 @@
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environments
+venv/
+.venv/
+
+# If you use Poetry
+poetry.lock
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore environment variables file
+.env
+
+# Mac-specific files
+.DS_Store
+
+# Windows-specific files
+Thumbs.db
